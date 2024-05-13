@@ -5,7 +5,7 @@ import Contact from '../models/contact.js';
 export const getAllContacts = async (_, res, next) => {
   try {
     const allContacts = await Contact.find();
-    res.status(200).send(allContacts);
+    res.status(200).json(allContacts);
   } catch (error) {
     next(error);
   }
@@ -49,14 +49,14 @@ export const createContact = async (req, res, next) => {
 
 export const updateContact = async (req, res, next) => {
   try {
-    const { contactId } = req.params;
-
-    const updatedContact = await Contact.findByIdAndUpdate(contactId, req.body, { new: true });
-
-    if (!updatedContact) throw HttpError(404);
-
-    return res.status(200).send(updatedContact);
-  } catch (error) {
-    next(error);
+    const { id } = req.params;
+    const { name, email, phone } = req.body;
+    const contact = await changeContact(id, { name, email, phone });
+    if (!contact) {
+      throw HttpError(404, "id not found");
+    }
+    res.json(contact);
+  } catch (err) {
+    next(err);
   }
 };
