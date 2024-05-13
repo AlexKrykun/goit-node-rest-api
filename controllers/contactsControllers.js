@@ -5,7 +5,7 @@ import contactsService from '../services/contactsServices.js';
 export const getAllContacts = async (_, res, next) => {
   try {
     const allContacts = await contactsService.listContacts();
-    res.status(200).send(allContacts);
+    res.status(200).json(allContacts);
   } catch (error) {
     next(error);
   }
@@ -53,17 +53,17 @@ export const createContact = async (req, res, next) => {
 export const updateContact = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const value = req.body;
-    const oneContact = await contactsService.getContactById(id);
-
-    if (!oneContact) {
-      throw HttpError(404);
+    const { name, email, phone } = req.body;
+    const validate = await updateContactSchema.validateAsync(req.body);
+    if (validate.error) {
+      throw HttpError(400, { message: validate.error.message });
     }
-    const { name = oneContact.name, email = oneContact.email, phone = oneContact.phone } = value;
-    const updatedContact = await contactsService.updateContact(id, { name, email, phone });
-
-    return res.status(200).send(updatedContact);
-  } catch (error) {
-    next(error);
+    const contact = await changeContact(id, { name, email, phone });
+    if (!contact) {
+      throw HttpError(404, "id not found");
+    }
+    res.json(contact);
+  } catch (err) {
+    next(err);
   }
 };
