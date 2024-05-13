@@ -54,10 +54,6 @@ export const updateContact = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { name, email, phone } = req.body;
-    const validate = await updateContactSchema.validateAsync(req.body);
-    if (validate.error) {
-      throw HttpError(400, { message: validate.error.message });
-    }
     const contact = await changeContact(id, { name, email, phone });
     if (!contact) {
       throw HttpError(404, "id not found");
