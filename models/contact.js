@@ -1,22 +1,26 @@
 
-import Joi from 'joi';
+import mongoose from 'mongoose';
 
-export const createContactSchema = Joi.object({
-  name: Joi.string().min(3).max(30).required(),
-  email: Joi.string().email().required(),
-  phone: Joi.string()
-    .pattern(new RegExp(`^[+]?[(]?[0-9]{1,3}[)]?[- ]?[0-9]{1,3}[- ]?[0-9]{1,6}$`))
-    .required(),
-});
+const contactSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: [true, 'Set name for contact'],
+    },
+    email: {
+      type: String,
+    },
+    phone: {
+      type: String,
+    },
+    favorite: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  {
+    versionKey: false,
+  }
+);
 
-export const updateContactSchema = Joi.object({
-  name: Joi.string().min(3).max(30),
-  email: Joi.string().email(),
-  phone: Joi.string().pattern(new RegExp(`^[+]?[(]?[0-9]{1,3}[)]?[- ]?[0-9]{1,3}[- ]?[0-9]{1,6}$`)),
-})
-  .min(1)
-  .message('Body must have at least one field');
-
-export const updateStatusContactSchema = Joi.object({
-  favorite: Joi.boolean(),
-});
+export default mongoose.model('Contact', contactSchema);
