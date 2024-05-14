@@ -1,11 +1,10 @@
-
 import HttpError from '../helpers/HttpError.js';
-import Contact from '../models/contact.js';
+import contactsService from '../services/contactsServices.js';
 
 export const getAllContacts = async (_, res, next) => {
   try {
-    const allContacts = await Contact.find();
-    res.status(200).json(allContacts);
+    const allContacts = await contactsService.listContacts();
+    res.status(200).send(allContacts);
   } catch (error) {
     next(error);
   }
@@ -13,11 +12,12 @@ export const getAllContacts = async (_, res, next) => {
 
 export const getOneContact = async (req, res, next) => {
   try {
-    const { contactId } = req.params;
-    const oneContact = await Contact.findById(contactId);
+    const { id } = req.params;
+    const oneContact = await contactsService.getContactById(id);
 
-    if (!oneContact) throw HttpError(404);
-
+    if (!oneContact) {
+      throw HttpError(404);
+    }
     res.status(200).send(oneContact);
   } catch (error) {
     next(error);
@@ -26,11 +26,12 @@ export const getOneContact = async (req, res, next) => {
 
 export const deleteContact = async (req, res, next) => {
   try {
-    const { contactId } = req.params;
-    const deletedContact = await Contact.findByIdAndDelete(contactId);
+    const { id } = req.params;
+    const deletedContact = await contactsService.removeContact(id);
 
-    if (!deletedContact) throw HttpError(404);
-
+    if (!deletedContact) {
+      throw HttpError(404);
+    }
     res.status(200).send(deletedContact);
   } catch (error) {
     next(error);
@@ -39,7 +40,8 @@ export const deleteContact = async (req, res, next) => {
 
 export const createContact = async (req, res, next) => {
   try {
-    const addContact = await Contact.create(req.body);
+    const value = req.body;
+    const addContact = await contactsService.addContact(value);
 
     return res.status(201).send(addContact);
   } catch (error) {
