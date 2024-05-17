@@ -1,31 +1,37 @@
 
-import express from 'express';
+import express from "express";
+import validateBody from "../helpers/validateBody.js";
 import {
-  createUser,
-  currentUser,
-  loginUser,
-  logoutUser,
-  subscriptionUpdate,
-} from '../controllers/usersControllers.js';
-import {
-  createUserSchema,
-  loginUserSchema,
-  updateUserSubscriptionSchema,
-} from '../schemas/usersSchemas.js';
-import validateBody from '../helpers/validateBody.js';
-import authMiddleware from '../middleware/auth.js';
+  usersAuthloginSchema,
+  usersAuthRegisterSchema,
+} from "../schemas/usersSchemas.js";
+import userContollers from "../controllers/userContollers.js";
+import { userAuthToken } from "../Middlewares/Middlewares.js";
+import { dowloadAvatar } from "../Middlewares/Middlewares.js";
 
 const usersRouter = express.Router();
 
-usersRouter.post('/register', validateBody(createUserSchema), createUser);
-usersRouter.post('/login', validateBody(loginUserSchema), loginUser);
-usersRouter.post('/logout', authMiddleware, logoutUser);
-usersRouter.get('/current', authMiddleware, currentUser);
+usersRouter.post(
+  "/register",
+  validateBody(usersAuthRegisterSchema),
+  userContollers.registerUser
+);
+
+usersRouter.post(
+  "/login",
+  validateBody(usersAuthloginSchema),
+  userContollers.loginUser
+);
+
+usersRouter.post("/logout", userAuthToken, userContollers.LogoutUser);
+
+usersRouter.post("/current", userAuthToken, userContollers.currentUser);
+
 usersRouter.patch(
-  '/',
-  authMiddleware,
-  validateBody(updateUserSubscriptionSchema),
-  subscriptionUpdate
+  "/avatars",
+  userAuthToken,
+  dowloadAvatar,
+  userContollers.updateAvatar
 );
 
 export default usersRouter;

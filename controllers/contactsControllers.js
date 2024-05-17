@@ -1,70 +1,104 @@
 
-import HttpError from '../helpers/HttpError.js';
-import Contact from '../models/contact.js';
+import Contact from "../model/contact.js";
+import HttpError from "../helpers/HttpError.js";
 
-export const getAllContacts = async (req, res, next) => {
+async function getAllContacts(req, res, next) {
   try {
-    const allContacts = await Contact.find({ owner: req.user.id });
-    res.status(200).send(allContacts);
+    const { _id: owner } = req.user;
+    console.log(owner);
+    const contacts = await Contact.find({ owner });
+    res.json(contacts);
   } catch (error) {
     next(error);
   }
-};
+}
 
-export const getOneContact = async (req, res, next) => {
+async function getOneContact(req, res, next) {
   try {
-    const { contactId } = req.params;
+    const { _id: owner } = req.user;
+    const { id } = req.params;
+    const contact = await Contact.findById(id, owner);
+    if (!contact) throw HttpError(404, "Contact not found");
 
-    const oneContact = await Contact.findOne({ _id: contactId, owner: req.user.id });
-
-    if (!oneContact) throw HttpError(404);
-
-    res.status(200).send(oneContact);
+    res.json(contact);
   } catch (error) {
     next(error);
   }
-};
+}
 
-export const deleteContact = async (req, res, next) => {
+async function createContact(req, res, next) {
   try {
-    const { contactId } = req.params;
-
-    const deletedContact = await Contact.findOneAndDelete({ _id: contactId, owner: req.user.id });
-
-    if (!deletedContact) throw HttpError(404);
-
-    res.status(200).send(deletedContact);
+    const { name, email, phone, favorite } = req.body;
+    const owner = req.user._id;
+    const contact = await Contact.create({
+      name,
+      email,
+      phone,
+      favorite,
+      owner,
+    });
+    res.status(201).json(contact);
   } catch (error) {
     next(error);
   }
-};
+}
 
-export const createContact = async (req, res, next) => {
+async function updateContact(req, res, next) {
   try {
-    const addContact = await Contact.create({ ...req.body, owner: req.user.id });
-
-    res.status(201).send(addContact);
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const updateContact = async (req, res, next) => {
-  try {
-    const { contactId } = req.params;
-
-    const updatedContact = await Contact.findOneAndUpdate(
-      { _id: contactId, owner: req.user.id },
-      req.body,
-      {
-        new: true,
-      }
+    const { id } = req.params;
+    const { name, email, phone, favorite } = req.body;
+    const owner = req.user._id;
+    const updatedContact = await Contact.findByIdAndUpdate(
+      id,
+      { name, email, phone, favorite, owner },
+      { new: true }
     );
-
-    if (!updatedContact) throw HttpError(404);
-
-    res.status(200).send(updatedContact);
+    if (!updatedContact) {
+      throw HttpError(404, "Contact not found");
+    }
+    res.json(updatedContact);
   } catch (error) {
     next(error);
   }
+}
+
+async function deleteContact(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { _id: owner } = req.user;
+    const deletedContact = await Contact.findOneAndDelete({ _id: id, owner });
+    if (!deletedContact) {
+      throw HttpError(404, "Contact not found");
+    }
+    res.json({ result: deletedContact });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function updateFavorite(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { favorite } = req.body;
+    const owner = req.user._id;
+    const updatedContact = await Contact.findByIdAndUpdate(
+      id,
+      { favorite },
+      { new: true }
+    );
+    if (!updatedContact) {
+      throw HttpError(404, "Contact not found");
+    }
+    res.json(updatedContact);
+  } catch (error) {
+    next(error);
+  }
+}
+export default {
+  updateContact,
+  createContact,
+  getOneContact,
+  getAllContacts,
+  deleteContact,
+  updateFavorite,
 };

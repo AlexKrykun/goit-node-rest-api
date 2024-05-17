@@ -1,36 +1,34 @@
-import express from 'express';
-import morgan from 'morgan';
-import cors from 'cors';
-import 'dotenv/config';
 
-import connect from './server.js';
-import contactsRouter from './routes/contactsRouter.js';
+import express from "express";
+import morgan from "morgan";
+import cors from "cors";
+import "dotenv/config";
+import database from "./db.js";
 
-const PORT = process.env.PORT;
+import contactsRouter from "./routes/contactsRouter.js";
+import usersRouter from "./routes/usersRouter.js";
+
+database();
 const app = express();
 
-app.use(morgan('tiny'));
+app.use(morgan("tiny"));
 app.use(cors());
 app.use(express.json());
+app.use(express.static("public"));
 
-app.use('/api/contacts', contactsRouter);
+app.use("/api/contacts", contactsRouter);
+app.use("/users", usersRouter);
 
 app.use((_, res) => {
-  res.status(404).json({ message: 'Route not found' });
+  res.status(404).json({ message: "Route not found" });
 });
 
-app.use((err, _, res, __) => {
-  const { status = 500, message = 'Server error' } = err;
+app.use((err, req, res, next) => {
+  console.error(err);
+  const { status = 500, message = "Server error" } = err;
   res.status(status).json({ message });
 });
 
-connect()
-  .then(
-    app.listen(PORT, () => {
-      console.log(`Server is running. Use our API on port: ${PORT}`);
-    })
-  )
-  .catch(error => {
-    console.log(error);
-    process.exit(1);
-  });
+app.listen(3000, () => {
+  console.log("Server is running. Use our API on port: 3000");
+});
