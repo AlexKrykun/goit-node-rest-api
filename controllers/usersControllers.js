@@ -1,95 +1,127 @@
 
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import HttpError from '../helpers/HttpError.js';
+import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
+import User from "../model/user.js";
+import Jimp from "jimp";
+import gravatar from "gravatar";
+import crypto from "crypto";
+import HttpError from "../helpers/HttpError.js";
+import fs from "fs";
+import path from "path";
 
-import User from '../models/user.js';
-
-export const createUser = async (req, res, next) => {
+async function registerUser(req, res, next) {
   try {
-    const { email, password } = req.body;
+    const { email, password, subscription } = req.body;
     const user = await User.findOne({ email });
-
-    if (user !== null) {
-      throw HttpError(409, 'Email in use');
+    if (user) {
+      return res.status(409).json({ message: "Email in use" });
     }
-
-    const passwordHash = await bcrypt.hash(password, 10);
-
-    const addUser = await User.create({ email, password: passwordHash });
-
-    res.status(201).json({
+    const salt = await bcrypt.genSalt(10);
+    const saltPassword = await bcrypt.hash(password, salt);
+    const avatar = gravatar.url(email, { s: "200", d: "robohash" }, true);
+    const newUser = new User({
+      email,
+      password: saltPassword,
+      subscription,
+      avatarURL: avatar,
+    });
+    await newUser.save();
+    return res.status(201).json({
       user: {
-        email: addUser.email,
-        subscription: addUser.subscription,
+        email: newUser.email,
+        subscription: newUser.subscription,
       },
     });
   } catch (error) {
     next(error);
   }
-};
+}
 
-export const loginUser = async (req, res, next) => {
+async function loginUser(req, res, next) {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
 
     if (!user) {
-      throw HttpError(401, 'Email or password is wrong');
+      return res.status(401).json({
+        message: "Email or password is wrong",
+      });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
-
-    if (!isMatch) {
-      throw HttpError(401, 'Email or password is wrong');
+    const isPasswordCorrect = await bcrypt.compare(password, user.password);
+    if (!isPasswordCorrect) {
+      return res.status(401).json({
+        message: "Email or password is wrong",
+      });
     }
 
-    const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET);
-    const addUserToken = await User.findByIdAndUpdate(user._id, { token }, { new: true });
+    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
+      expiresIn: "24h",
+    });
 
+    await User.findByIdAndUpdate(user.id, { token });
     res.status(200).json({
-      token: addUserToken.token,
+      token,
       user: {
-        email: addUserToken.email,
-        subscription: addUserToken.subscription,
+        email: user.email,
+        subscription: user.subscription,
       },
     });
   } catch (error) {
     next(error);
   }
-};
+}
 
-export const logoutUser = async (req, res, next) => {
+async function LogoutUser(req, res, next) {
   try {
-    await User.findByIdAndUpdate(req.user._id, { token: null });
-    res.status(204).end();
+    const { email } = req.body;
+    await User.findOneAndUpdate({ email }, { token: null });
+    res.status(204).json({});
   } catch (error) {
     next(error);
   }
-};
+}
 
-export const currentUser = async (req, res, next) => {
+async function currentUser(req, res, next) {
   try {
-    res.status(200).json({
-      email: req.user.email,
-      subscription: req.user.subscription,
-    });
+    const user = req.user;
+
+    res
+      .status(200)
+      .json({ email: user.email, subscription: user.subscription });
   } catch (error) {
     next(error);
   }
-};
-
-export const subscriptionUpdate = async (req, res, next) => {
+}
+async function updateAvatar(req, res, next) {
   try {
-    const updatedUser = await User.findByIdAndUpdate(req.user._id, req.body, {
-      new: true,
-    });
+    if (!req.file) throw new HttpError(400, "No file uploaded");
 
-    res.status(200).json({
-      email: updatedUser.email,
-      subscription: updatedUser.subscription,
-    });
+    const tmp = req.file.path;
+    const readPath = path.join("public", "avatars", req.file.filename);
+
+    const img = await Jimp.read(tmp);
+    await img.resize(100, 100).quality(60).greyscale().writeAsync(readPath);
+
+    await fs.promises.unlink(tmp);
+
+    const { email } = req.user;
+
+    await User.findOneAndUpdate(
+      { email },
+      { avatarURL: `avatars/${req.file.filename}` }
+    );
+
+    res.status(200).json({ avatarURL: `avatars/${req.file.filename}` });
   } catch (error) {
     next(error);
   }
+}
+
+export default {
+  registerUser,
+  loginUser,
+  LogoutUser,
+  currentUser,
+  updateAvatar,
 };
