@@ -1,4 +1,4 @@
-// 1
+
 import Contact from "../model/contact.js";
 import HttpError from "../helpers/HttpError.js";
 
