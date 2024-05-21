@@ -6,8 +6,8 @@ import {
   usersAuthRegisterSchema,
 } from "../schemas/usersSchemas.js";
 import userContollers from "../controllers/userContollers.js";
-import { userAuthToken } from "../Middlewares/Middlewares.js";
-import { dowloadAvatar } from "../Middlewares/Middlewares.js";
+import { userAuthToken, dowloadAvatar } from "../Middlewares/Middlewares.js";
+
 
 const usersRouter = express.Router();
 
