@@ -5,10 +5,11 @@ import {
   usersAuthloginSchema,
   usersAuthRegisterSchema,
 } from "../schemas/usersSchemas.js";
+
 import userContollers from "../controllers/userContollers.js";
-import { userAuthToken, dowloadAvatar } from "../Middlewares/Middlewares.js";
-
-
+import { userAuthToken } from "../Middlewares/Middlewares.js";
+import { dowloadAvatar } from "../Middlewares/Middlewares.js";
+import { emailSchema } from "../schemas/usersSchemas.js";
 const usersRouter = express.Router();
 
 usersRouter.post(
@@ -25,13 +26,21 @@ usersRouter.post(
 
 usersRouter.post("/logout", userAuthToken, userContollers.LogoutUser);
 
-usersRouter.post("/current", userAuthToken, userContollers.currentUser);
+usersRouter.get("/current", userAuthToken, userContollers.currentUser);
 
 usersRouter.patch(
   "/avatars",
   userAuthToken,
   dowloadAvatar,
   userContollers.updateAvatar
+);
+
+usersRouter.get("/verify/:verificationToken", userContollers.verifyEmail);
+
+usersRouter.post(
+  "/verify",
+  validateBody(emailSchema),
+  userContollers.resendVerifyEmail
 );
 
 export default usersRouter;

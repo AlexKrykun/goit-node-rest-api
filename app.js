@@ -4,6 +4,10 @@ import morgan from "morgan";
 import cors from "cors";
 import "dotenv/config";
 import database from "./db.js";
+import swaggerUi from "swagger-ui-express";
+import "dotenv/config";
+
+import { swaggerSpec } from "./helpers/swager.js";
 
 import contactsRouter from "./routes/contactsRouter.js";
 import usersRouter from "./routes/usersRouter.js";
@@ -18,6 +22,7 @@ app.use(express.static("public"));
 
 app.use("/api/contacts", contactsRouter);
 app.use("/users", usersRouter);
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use((_, res) => {
   res.status(404).json({ message: "Route not found" });
