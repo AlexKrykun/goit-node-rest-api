@@ -1,3 +1,4 @@
+
 import mongoose from "mongoose";
 
 const userShema = new mongoose.Schema({
@@ -20,5 +21,13 @@ const userShema = new mongoose.Schema({
     default: null,
   },
   avatarURL: { type: String },
+  verify: {
+    type: Boolean,
+    default: false,
+  },
+  verificationToken: {
+    type: String,
+    required: [true, "Verify token is required"],
+  },
 });
 export default mongoose.model("User", userShema);
