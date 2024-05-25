@@ -1,3 +1,4 @@
+
 import swaggerJsdoc from "swagger-jsdoc";
 
 const options = {
@@ -31,3 +32,4 @@ const options = {
 };
 
 export const swaggerSpec = swaggerJsdoc(options);
+
